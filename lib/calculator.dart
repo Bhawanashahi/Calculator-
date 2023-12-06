@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:math_expressions/math_expressions.dart';
 
 class CalculatorView extends StatefulWidget {
   const CalculatorView({Key? key}) : super(key: key);
@@ -12,26 +13,7 @@ class _CalculatorViewState extends State<CalculatorView> {
   String result = '';
 
   List<String> str = [
-    "C",
-    "*",
-    "/",
-    "<-",
-    "1",
-    "2",
-    "3",
-    "+",
-    "4",
-    "5",
-    "6",
-    "-",
-    "7",
-    "8",
-    "9",
-    "*",
-    "%",
-    "0",
-    ".",
-    "=",
+    "C", "*", "/", "<-", "1", "2", "3", "+", "4", "5", "6", "-", "7", "8", "9", "x", "%", "0", ".", "=",
   ];
 
   @override
@@ -45,8 +27,7 @@ class _CalculatorViewState extends State<CalculatorView> {
           TextFormField(
             textAlign: TextAlign.right,
             decoration: const InputDecoration(
-              border: OutlineInputBorder(
-              ),
+              border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,
             readOnly: true,
@@ -69,14 +50,22 @@ class _CalculatorViewState extends State<CalculatorView> {
                   child: Container(
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Colors.yellow,  // Set the background color to grey
-                      borderRadius: BorderRadius.circular(50.0),  // Set border radius
+                      color: isOperator(str[index])
+                          ? Colors.grey[300]
+                          : isFunctionButton(str[index])
+                          ? Colors.grey[300]
+                          : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(50.0),
                       border: Border.all(),
-
                     ),
-                    child: Text(str[index],
-                    style: TextStyle(color: Colors.black),),
-                    
+                    child: Text(
+                      str[index],
+                      style: TextStyle(
+                        color: isOperator(str[index]) ? Colors.black : Colors.black,
+                        fontSize: isFunctionButton(str[index]) ? 20 : 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 );
               },
@@ -102,6 +91,8 @@ class _CalculatorViewState extends State<CalculatorView> {
           result = _calculateResult(userInput);
           userInput = result;
         }
+      } else if (buttonText == "<-" && userInput.isNotEmpty) {
+        userInput = userInput.substring(0, userInput.length - 1);
       } else {
         userInput += buttonText;
       }
@@ -110,48 +101,26 @@ class _CalculatorViewState extends State<CalculatorView> {
 
   String _calculateResult(String input) {
     try {
-      // Evaluate the expression
-      // Using 'try-catch' for basic error handling
-      // Not suitable for handling all edge cases in production
-      // For a more comprehensive solution, consider using a parser library
-      // or adopting a more robust error-handling strategy.
-      // This is a simplified example for demonstration purposes only.
-      // Avoid using eval for production due to security vulnerabilities.
-      return eval(input).toString();
+      input = input.replaceAll('x', '*');
+      input = input.replaceAll('%', '/100');
+
+      Parser p = Parser();
+      Expression exp = p.parse(input);
+      ContextModel cm = ContextModel();
+      double evalResult = exp.evaluate(EvaluationType.REAL, cm);
+
+      return evalResult.toStringAsFixed(2);
     } catch (e) {
       return 'Error';
     }
   }
 
-  double eval(String expression) {
-    // Split the expression into operands and operators
-    List<String> parts = expression.split(RegExp(r'(\+|-|\*|/)'));
-    List<String> operations = expression.split(RegExp(r'[0-9]|[.]'));
+  bool isOperator(String buttonText) {
+    return buttonText == '+' || buttonText == '-' || buttonText == '*' || buttonText == '/';
+  }
 
-    double total = double.parse(parts[0]);
-
-    for (int i = 1; i < parts.length; i++) {
-      double current = double.parse(parts[i]);
-      String operation = operations[i];
-
-      switch (operation) {
-        case '+':
-          total += current;
-          break;
-        case '-':
-          total -= current;
-          break;
-        case '*':
-          total *= current;
-          break;
-        case '/':
-          total /= current;
-          break;
-        default:
-          break;
-      }
-    }
-
-    return total;
+  bool isFunctionButton(String buttonText) {
+    return buttonText == 'C' || buttonText == '=' || buttonText == '<-';
   }
 }
+
